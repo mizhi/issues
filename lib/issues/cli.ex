@@ -36,19 +36,24 @@ defmodule Issues.CLI do
     """
   end
 
-  def process({user, project, _count}) do
+  def process({user, project, count}) do
     Issues.GithubIssues.fetch(user, project)
     |> decode_response
+    |> sort_into_ascending_order
+    |> Enum.take(count)
+    |> Issues.TableFormatter.print_table_for_columns(["number", "created_at", "title"])
   end
 
   def decode_response({:ok,  response}) do
     response
-    |> Enum.map :
-    IO.puts("#{response}")
   end
 
   def decode_response({:error, %{"message" => message}}) do
     IO.puts "Error fetching from github: #{message}"
     System.halt(2)
+  end
+
+  def sort_into_ascending_order(issue_list) do
+    Enum.sort(issue_list, fn i1, i2 -> i1["created_at"] <= i2["created_at"] end)
   end
 end
